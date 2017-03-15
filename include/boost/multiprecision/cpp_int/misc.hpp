@@ -57,12 +57,48 @@ inline Integer negate_integer(Integer i, const mpl::false_&) BOOST_NOEXCEPT
    return ~(i-1);
 }
 
+template <class R, class MP>
+struct convert_to_integer_initializer
+{
+   struct init
+   {
+      init()
+      {
+         MP value(0);
+         value.template convert_to<R>();
+      }
+      void force_instantiate()const{}
+   };
+   static const init initializer;
+   static void force_instantiate()
+   {
+      initializer.force_instantiate();
+   }
+};
+
+template <class R, class MP>
+const typename convert_to_integer_initializer<R, MP>::init convert_to_integer_initializer<R, MP>::initializer;
+
+
+
 template <class R, unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1>
 inline typename enable_if_c<is_integral<R>::value && !is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value, void>::type
    eval_convert_to(R* result, const cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>& backend) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
    typedef mpl::int_<Checked1> checked_type;
    check_in_range<R>(backend, checked_type());
+   
+   convert_to_integer_initializer<R, number<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> > >::force_instantiate();
+
+   static const R min_R = (std::numeric_limits<R>::is_specialized ? (std::numeric_limits<R>::min)() : static_cast<R>(-1) < 0 ? -(((static_cast<R>(1) << (sizeof(R) * CHAR_BIT - 2)) - 1) | (static_cast<R>(1) << (sizeof(R) * CHAR_BIT - 2))) - 1 : 0);
+   static const number<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> > min_value(min_R);
+    
+
+   if(min_value.compare(backend) >= 0)
+   {
+      *result = min_R;
+      return;
+   }
 
    *result = static_cast<R>(backend.limbs()[0]);
    unsigned shift = cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;

@@ -21,6 +21,37 @@ struct is_checked_cpp_int : public boost::mpl::false_ {};
 #pragma warning(disable:4127)
 #endif
 
+#ifdef BOOST_HAS_INT128
+
+static const char* digits = "0123456789ABCDEF";
+
+std::ostream& operator << (std::ostream& os, __int128 i)
+{
+   std::string s;
+   bool neg = i < 0;
+   if(i < 0)
+      i = -i;
+   while(i)
+   {
+      s.insert(s.begin(), (char)(digits[i & 0xf]));
+      i >>= 8;
+   }
+   if(neg)
+      s.insert(s.begin(), '-');
+   return os << s;
+}
+std::ostream& operator << (std::ostream& os, unsigned __int128 i)
+{
+   std::string s;
+   while(i)
+   {
+      s.insert(s.begin(), (char)(digits[i & 0xf]));
+      i >>= 8;
+   }
+   return os << s;
+}
+#endif
+
 template <class Target, class Source>
 Target checked_lexical_cast(const Source& val)
 {
@@ -384,6 +415,7 @@ void test_signed_integer_ops(const boost::mpl::false_&)
 template <class Real, class Int>
 void test_integer_round_trip()
 {
+   BOOST_STATIC_ASSERT(std::numeric_limits<Int>::is_specialized);
    if(std::numeric_limits<Real>::digits >= std::numeric_limits<Int>::digits)
    {
       Real m((std::numeric_limits<Int>::max)());
@@ -1917,6 +1949,10 @@ void test()
 #ifdef BOOST_HAS_LONG_LONG
    test_mixed<Real, long long>(tag);
    test_mixed<Real, unsigned long long>(tag);
+#endif
+#ifdef BOOST_HAS_INT128
+   test_mixed<Real, __int128>(tag);
+   test_mixed<Real, unsigned __int128>(tag);
 #endif
    test_mixed<Real, float>(tag);
    test_mixed<Real, double>(tag);
