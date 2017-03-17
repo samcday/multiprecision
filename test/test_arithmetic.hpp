@@ -283,6 +283,9 @@ void test_integer_ops(const boost::mpl::int_<boost::multiprecision::number_kind_
 }
 
 template <class Real>
+#ifdef __clang__
+__attribute__((no_sanitize("shift"))) 
+#endif
 void test_signed_integer_ops(const boost::mpl::true_&)
 {
    Real a(20);
