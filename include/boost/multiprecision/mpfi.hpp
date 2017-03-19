@@ -61,7 +61,10 @@ struct mpfi_float_imp;
 template <unsigned digits10>
 struct mpfi_float_imp
 {
-#ifdef BOOST_HAS_LONG_LONG
+#if defined(BOOST_HAS_LONG_LONG) && defined(BOOST_HAS_INT128)
+   typedef mpl::list<long, boost::long_long_type, __int128>                      signed_types;
+   typedef mpl::list<unsigned long, boost::ulong_long_type, unsigned __int128>   unsigned_types;
+#elif defined(BOOST_HAS_LONG_LONG)
    typedef mpl::list<long, boost::long_long_type>                     signed_types;
    typedef mpl::list<unsigned long, boost::ulong_long_type>   unsigned_types;
 #else
@@ -161,6 +164,39 @@ struct mpfi_float_imp
       return *this;
    }
 #endif
+#endif
+#ifdef BOOST_HAS_INT128
+   mpfi_float_imp& operator = (unsigned __int128 i)
+   {
+      if(m_data[0].left._mpfr_d == 0)
+         mpfi_init2(m_data, multiprecision::detail::digits10_2_2(digits10 ? digits10 : get_default_precision()));
+      unsigned __int128 mask = ((((1uLL << (std::numeric_limits<unsigned long>::digits - 1)) - 1) << 1) | 1u);
+      unsigned shift = 0;
+      mpfi_t t;
+      mpfi_init2(t, (std::max)(static_cast<unsigned long>(std::numeric_limits<boost::ulong_long_type>::digits), static_cast<unsigned long>(multiprecision::detail::digits10_2_2(digits10))));
+      mpfi_set_ui(m_data, 0);
+      while(i)
+      {
+         mpfi_set_ui(t, static_cast<unsigned long>(i & mask));
+         if(shift)
+            mpfi_mul_2exp(t, t, shift);
+         mpfi_add(m_data, m_data, t);
+         shift += std::numeric_limits<unsigned long>::digits;
+         i >>= std::numeric_limits<unsigned long>::digits;
+      }
+      mpfi_clear(t);
+      return *this;
+   }
+   mpfi_float_imp& operator = (__int128 i)
+   {
+      if(m_data[0].left._mpfr_d == 0)
+         mpfi_init2(m_data, multiprecision::detail::digits10_2_2(digits10 ? digits10 : get_default_precision()));
+      bool neg = i < 0;
+      *this = boost::multiprecision::detail::unsigned_abs(i);
+      if(neg)
+         mpfi_neg(m_data, m_data);
+      return *this;
+   }
 #endif
    mpfi_float_imp& operator = (unsigned long i)
    {
