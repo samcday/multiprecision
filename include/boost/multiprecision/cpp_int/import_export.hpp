@@ -35,11 +35,14 @@ namespace boost {
             if(chunk_bits > sizeof(limb_type) * CHAR_BIT - shift)
             {
                shift = sizeof(limb_type) * CHAR_BIT - shift;
-               chunk_bits -= shift;
-               bit_location += shift;
-               bits >>= shift;
-               if(bits)
-                  assign_bits(val, bits, bit_location, chunk_bits, tag);
+               if(shift < sizeof(bits) * CHAR_BIT)
+               {
+		            chunk_bits -= shift;
+		            bit_location += shift;
+		            bits >>= shift;
+		            if(bits)
+		               assign_bits(val, bits, bit_location, chunk_bits, tag);
+               }
             }
          }
          template <class Backend, class Unsigned>
@@ -61,7 +64,7 @@ namespace boost {
                // Check for overflow bits:
                //
                bit_location = sizeof(local_limb_type) * CHAR_BIT - bit_location;
-               bits >>= bit_location;
+               bits = bit_location >= sizeof(bits) * CHAR_BIT ? 0 : bits >> bit_location;
                if(bits)
                   val.resize(2, 2); // May throw!
             }
