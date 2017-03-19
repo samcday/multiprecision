@@ -1245,27 +1245,66 @@ struct lexical_cast_target_type
 template <class Real, class Num>
 void test_negative_mixed_minmax(boost::mpl::true_ const&)
 {
-   if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits >= std::numeric_limits<Num>::digits))
+   bool test_unsigned  = false;
+   bool test_signed = false;
+   if(std::numeric_limits<Real>::radix == 10)
    {
-      Real mx1((std::numeric_limits<Num>::max)() - 1);
+#ifndef BOOST_NO_CXX11_NUMERIC_LIMITS
+      if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits10 >= std::numeric_limits<Num>::max_digits10))
+      {
+         test_unsigned = true;
+         if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits10 > std::numeric_limits<Num>::max_digits10))
+            test_signed = true;
+      }
+#else
+      if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits10 >= std::numeric_limits<Num>::digits10 + 2))
+      {
+         test_unsigned = true;
+         if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits10 > std::numeric_limits<Num>::digits10 + 2))
+            test_signed = true;
+      }
+#endif
+   }
+   else if(std::numeric_limits<Real>::radix == 2)
+   {
+      if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits >= std::numeric_limits<Num>::digits))
+      {
+         test_unsigned = true;
+         if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits > std::numeric_limits<Num>::digits))
+            test_signed = true;
+      }
+   }
+   if(test_unsigned)
+   {
+      Num max_val = (std::numeric_limits<Num>::max)();
+      Real mx1(max_val - 1);
       ++mx1;
-      Real mx2((std::numeric_limits<Num>::max)());
+      Real mx2(max_val);
       BOOST_CHECK_EQUAL(mx1, mx2);
-      mx1 = (std::numeric_limits<Num>::max)() - 1;
+      Num a = mx1.template convert_to<Num>();
+      BOOST_CHECK_EQUAL(a, max_val);
+      mx1 = max_val - 1;
       ++mx1;
-      mx2 = (std::numeric_limits<Num>::max)();
+      mx2 = max_val;
       BOOST_CHECK_EQUAL(mx1, mx2);
+      a = mx1.template convert_to<Num>();
+      BOOST_CHECK_EQUAL(a, max_val);
 
       if(!std::numeric_limits<Real>::is_bounded || (std::numeric_limits<Real>::digits > std::numeric_limits<Num>::digits))
       {
-         Real mx3((std::numeric_limits<Num>::min)() + 1);
+         Num min_val = (std::numeric_limits<Num>::min)();
+         Real mx3(min_val + 1);
          --mx3;
-         Real mx4((std::numeric_limits<Num>::min)());
+         Real mx4(min_val);
          BOOST_CHECK_EQUAL(mx3, mx4);
-         mx3 = (std::numeric_limits<Num>::min)() + 1;
+         a = mx3.template convert_to<Num>();
+         BOOST_CHECK_EQUAL(a, min_val);
+         mx3 = min_val + 1;
          --mx3;
-         mx4 = (std::numeric_limits<Num>::min)();
+         mx4 = min_val;
          BOOST_CHECK_EQUAL(mx3, mx4);
+         a = mx3.template convert_to<Num>();
+         BOOST_CHECK_EQUAL(a, min_val);
       }
    }
 }
@@ -1563,7 +1602,7 @@ void test_negative_mixed(boost::mpl::true_ const&)
    //
    // Conversion from min and max values:
    //
-   test_negative_mixed_minmax<Real, Num>(boost::mpl::bool_<std::numeric_limits<Real>::is_integer && std::numeric_limits<Num>::is_integer>());
+   test_negative_mixed_minmax<Real, Num>(boost::mpl::bool_<std::numeric_limits<Num>::is_integer>());
 }
 
 template <class Real, class Num>
@@ -1612,8 +1651,15 @@ void test_mixed(const boost::mpl::true_&)
          Real
       >::type simple_cast_type;
 
-   if(std::numeric_limits<Real>::is_specialized && std::numeric_limits<Real>::is_bounded && std::numeric_limits<Real>::digits < std::numeric_limits<Num>::digits)
+   if(std::numeric_limits<Real>::is_specialized && std::numeric_limits<Real>::is_bounded && (std::numeric_limits<Real>::radix == 2) && std::numeric_limits<Real>::digits < std::numeric_limits<Num>::digits)
       return;
+#ifndef BOOST_NO_CXX11_NUMERIC_LIMITS
+   if(std::numeric_limits<Real>::is_specialized && std::numeric_limits<Real>::is_bounded && (std::numeric_limits<Real>::radix == 10) && std::numeric_limits<Real>::digits10 < std::numeric_limits<Num>::max_digits10)
+      return;
+#else
+   if(std::numeric_limits<Real>::is_specialized && std::numeric_limits<Real>::is_bounded && (std::numeric_limits<Real>::radix == 10) && std::numeric_limits<Real>::digits10 < std::numeric_limits<Num>::digits10 + 3)
+      return;
+#endif
 
    std::cout << "Testing mixed arithmetic with type: " << typeid(Real).name()  << " and " << typeid(Num).name() << std::endl;
    static const int left_shift = std::numeric_limits<Num>::digits - 1;

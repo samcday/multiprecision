@@ -207,6 +207,26 @@ public:
       {
          from_unsigned_long_long(i);
       }
+#ifdef BOOST_HAS_INT128
+   cpp_dec_float(unsigned __int128 i) :
+      data(),
+      exp (static_cast<ExponentType>(0)),
+      neg (false),
+      fpclass (cpp_dec_float_finite),
+      prec_elem(cpp_dec_float_elem_number)
+      {
+         *this = i;
+      }
+   cpp_dec_float(__int128 i) :
+      data(),
+      exp (static_cast<ExponentType>(0)),
+      neg (false),
+      fpclass (cpp_dec_float_finite),
+      prec_elem(cpp_dec_float_elem_number)
+      {
+         *this = i;
+      }
+#endif
 
    template <class I>
    cpp_dec_float(I i, typename enable_if<is_signed<I> >::type* = 0) :
@@ -427,8 +447,17 @@ public:
    {
       if(v < 0)
       {
-         from_unsigned_long_long(-v);
-         negate();
+         if(v == (std::numeric_limits<boost::long_long_type>::min)())
+         {
+            boost::ulong_long_type ui = (std::numeric_limits<boost::long_long_type>::max)();
+            from_unsigned_long_long(ui + 1);
+            negate();
+         }
+         else
+         {
+            from_unsigned_long_long(-v);
+            negate();
+         }
       }
       else
          from_unsigned_long_long(v);
