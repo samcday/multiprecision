@@ -74,8 +74,16 @@ private:
    BOOST_STATIC_ASSERT_MSG(sizeof(ExponentType) > 1, "ExponentType is too small.");
 
 public:
-   typedef mpl::list<boost::long_long_type> signed_types;
-   typedef mpl::list<boost::ulong_long_type> unsigned_types;
+   typedef mpl::list<boost::long_long_type
+#ifdef BOOST_HAS_INT128
+      , __int128
+#endif
+   >                                                            signed_types;
+   typedef mpl::list<boost::ulong_long_type
+#ifdef BOOST_HAS_INT128
+      , unsigned __int128
+#endif
+   >                                                            unsigned_types;
    typedef mpl::list<long double> float_types;
    typedef ExponentType exponent_type;
 
@@ -447,17 +455,8 @@ public:
    {
       if(v < 0)
       {
-         if(v == (std::numeric_limits<boost::long_long_type>::min)())
-         {
-            boost::ulong_long_type ui = (std::numeric_limits<boost::long_long_type>::max)();
-            from_unsigned_long_long(ui + 1);
-            negate();
-         }
-         else
-         {
-            from_unsigned_long_long(-v);
-            negate();
-         }
+         from_unsigned_long_long(boost::multiprecision::detail::unsigned_abs(v));
+         negate();
       }
       else
          from_unsigned_long_long(v);
@@ -482,22 +481,12 @@ public:
    cpp_dec_float& operator=(unsigned __int128 v);
    inline cpp_dec_float& operator=(__int128 v)
    {
-	   if (v == (std::numeric_limits<__int128>::min)())
-	   {
-		   unsigned __int128 ui = (std::numeric_limits<__int128>::max)();
-		   ++ui;
-		   *this = ui;
+	   bool neg = v < 0;
+	   if (neg)
+		   v = -v;
+	   *this = boost::multiprecision::detail::unsigned_abs(v);
+	   if (neg)
 		   this->negate();
-	   }
-	   else
-	   {
-		   bool neg = v < 0;
-		   if (neg)
-			   v = -v;
-		   *this = static_cast<unsigned __int128>(v);
-		   if (neg)
-			   this->negate();
-	   }
 	   return *this;
    }
 #endif

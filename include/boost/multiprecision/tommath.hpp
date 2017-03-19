@@ -39,9 +39,17 @@ void eval_add(tommath_int& t, const tommath_int& o);
 
 struct tommath_int
 {
-   typedef mpl::list<boost::int32_t, boost::long_long_type>             signed_types;
-   typedef mpl::list<boost::uint32_t, boost::ulong_long_type>   unsigned_types;
-   typedef mpl::list<long double>                           float_types;
+   typedef mpl::list<boost::int32_t, boost::long_long_type
+#ifdef BOOST_HAS_INT128
+      , __int128
+#endif
+   >                                                            signed_types;
+   typedef mpl::list<boost::uint32_t, boost::ulong_long_type
+#ifdef BOOST_HAS_INT128
+      , unsigned __int128
+#endif
+   >                                                            unsigned_types;
+   typedef mpl::list<long double>                               float_types;
 
    tommath_int()
    {
@@ -92,6 +100,29 @@ struct tommath_int
       mp_clear(&t);
       return *this;
    }
+#ifdef BOOST_HAS_INT128
+   tommath_int& operator = (unsigned __int128 i)
+   {
+      if(m_data.dp == 0)
+         detail::check_tommath_result(mp_init(&m_data));
+      boost::ulong_long_type mask = ((static_cast<unsigned __int128>(1u) << std::numeric_limits<unsigned>::digits) - 1);
+      unsigned shift = 0;
+      ::mp_int t;
+      detail::check_tommath_result(mp_init(&t));
+      mp_zero(&m_data);
+      while(i)
+      {
+         detail::check_tommath_result(mp_set_int(&t, static_cast<unsigned>(i & mask)));
+         if(shift)
+            detail::check_tommath_result(mp_mul_2d(&t, shift, &t));
+         detail::check_tommath_result((mp_add(&m_data, &t, &m_data)));
+         shift += std::numeric_limits<unsigned>::digits;
+         i >>= std::numeric_limits<unsigned>::digits;
+      }
+      mp_clear(&t);
+      return *this;
+   }
+#endif
    tommath_int& operator = (boost::long_long_type i)
    {
       if(m_data.dp == 0)
@@ -102,6 +133,18 @@ struct tommath_int
          detail::check_tommath_result(mp_neg(&m_data, &m_data));
       return *this;
    }
+#ifdef BOOST_HAS_INT128
+   tommath_int& operator = (__int128 i)
+   {
+      if(m_data.dp == 0)
+         detail::check_tommath_result(mp_init(&m_data));
+      bool neg = i < 0;
+      *this = boost::multiprecision::detail::unsigned_abs(i);
+      if(neg)
+         detail::check_tommath_result(mp_neg(&m_data, &m_data));
+      return *this;
+   }
+#endif
    //
    // Note that although mp_set_int takes an unsigned long as an argument
    // it only sets the first 32-bits to the result, and ignores the rest.
