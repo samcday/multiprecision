@@ -449,6 +449,30 @@ public:
       return *this;
    }
 
+#ifdef BOOST_HAS_INT128
+   cpp_dec_float& operator=(unsigned __int128 v);
+   inline cpp_dec_float& operator=(__int128 v)
+   {
+	   if (v == (std::numeric_limits<__int128>::min)())
+	   {
+		   unsigned __int128 ui = (std::numeric_limits<__int128>::max)();
+		   ++ui;
+		   *this = ui;
+		   this->negate();
+	   }
+	   else
+	   {
+		   bool neg = v < 0;
+		   if (neg)
+			   v = -v;
+		   *this = static_cast<unsigned __int128>(v);
+		   if (neg)
+			   this->negate();
+	   }
+	   return *this;
+   }
+#endif
+
    cpp_dec_float& operator+=(const cpp_dec_float& v);
    cpp_dec_float& operator-=(const cpp_dec_float& v);
    cpp_dec_float& operator*=(const cpp_dec_float& v);
@@ -3011,6 +3035,16 @@ inline std::size_t hash_value(const cpp_dec_float<Digits10, ExponentType, Alloca
    return val.hash();
 }
 
+#ifdef BOOST_HAS_INT128
+template <unsigned Digits10, class ExponentType, class Allocator>
+cpp_dec_float<Digits10, ExponentType, Allocator>& cpp_dec_float<Digits10, ExponentType, Allocator>::operator=(unsigned __int128 v)
+{
+	unsigned long long lower(static_cast<boost::uint64_t>(v)), upper(v >> 64);
+	*this = upper;
+	*this *= pow2(64);
+	return *this += lower;
+}
+#endif
 } // namespace backends
 
 using boost::multiprecision::backends::cpp_dec_float;
