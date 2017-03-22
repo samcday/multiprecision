@@ -26,10 +26,15 @@ namespace concepts{
 
 struct number_backend_float_architype
 {
-   typedef mpl::list<boost::long_long_type>                 signed_types;
-   typedef mpl::list<boost::ulong_long_type>        unsigned_types;
-   typedef mpl::list<long double>               float_types;
-   typedef int                                  exponent_type;
+#ifdef BOOST_HAS_INT128
+   typedef mpl::list<boost::long_long_type, __int128>                 signed_types;
+   typedef mpl::list<boost::ulong_long_type, unsigned __int128>       unsigned_types;
+#else
+   typedef mpl::list<boost::long_long_type>                           signed_types;
+   typedef mpl::list<boost::ulong_long_type>                          unsigned_types;
+#endif
+   typedef mpl::list<long double>                                     float_types;
+   typedef int                                                        exponent_type;
 
    number_backend_float_architype()
    {
@@ -59,6 +64,20 @@ struct number_backend_float_architype
       std::cout << "Int Assignment (" << i << ")" << std::endl;
       return *this;
    }
+#ifdef BOOST_HAS_INT128
+   number_backend_float_architype& operator = (unsigned __int128 i)
+   {
+      m_value = i;
+      std::cout << "Unsigned __int128 Assignment" << std::endl;
+      return *this;
+   }
+   number_backend_float_architype& operator = (__int128 i)
+   {
+      m_value = i;
+      std::cout << "__int128 Assignment)" << std::endl;
+      return *this;
+   }
+#endif
    number_backend_float_architype& operator = (long double d)
    {
       m_value = d;
@@ -127,6 +146,18 @@ struct number_backend_float_architype
       std::cout << "Comparison with unsigned" << std::endl;
       return m_value > i ? 1 : (m_value < i ? -1 : 0);
    }
+#ifdef BOOST_HAS_INT128
+   int compare(__int128 i)const
+   {
+      std::cout << "Comparison with __int128" << std::endl;
+      return m_value > i ? 1 : (m_value < i ? -1 : 0);
+   }
+   int compare(unsigned __int128 i)const
+   {
+      std::cout << "Comparison with unsigned __int128" << std::endl;
+      return m_value > i ? 1 : (m_value < i ? -1 : 0);
+   }
+#endif
    int compare(long double d)const
    {
       std::cout << "Comparison with long double" << std::endl;

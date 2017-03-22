@@ -415,15 +415,18 @@ protected:
 template <unsigned digits10>
 struct mpfr_float_imp<digits10, allocate_stack>
 {
-#ifdef BOOST_HAS_LONG_LONG
-   typedef mpl::list<long, boost::long_long_type>                     signed_types;
-   typedef mpl::list<unsigned long, boost::ulong_long_type>   unsigned_types;
+#if defined(BOOST_HAS_LONG_LONG) && defined(BOOST_HAS_INT128)
+   typedef mpl::list<long, boost::long_long_type, __int128>                      signed_types;
+   typedef mpl::list<unsigned long, boost::ulong_long_type, unsigned __int128>   unsigned_types;
+#elif defined(BOOST_HAS_LONG_LONG)
+   typedef mpl::list<long, boost::long_long_type>                                signed_types;
+   typedef mpl::list<unsigned long, boost::ulong_long_type>                      unsigned_types;
 #else
-   typedef mpl::list<long>                                signed_types;
-   typedef mpl::list<unsigned long>                       unsigned_types;
+   typedef mpl::list<long>                                                       signed_types;
+   typedef mpl::list<unsigned long>                                              unsigned_types;
 #endif
-   typedef mpl::list<double, long double>                 float_types;
-   typedef long                                           exponent_type;
+   typedef mpl::list<double, long double>                                        float_types;
+   typedef long                                                                  exponent_type;
 
    static const unsigned digits2 = (digits10 * 1000uL) / 301uL + ((digits10 * 1000uL) % 301 ? 2u : 1u);
    static const unsigned limb_count = mpfr_custom_get_size(digits2) / sizeof(mp_limb_t);
@@ -492,6 +495,36 @@ struct mpfr_float_imp<digits10, allocate_stack>
       return *this;
    }
 #endif
+#endif
+#ifdef BOOST_HAS_INT128
+   mpfr_float_imp& operator = (unsigned __int128 i)
+   {
+      unsigned __int128 mask = ((((1uLL << (std::numeric_limits<unsigned long>::digits - 1)) - 1) << 1) | 1uL);
+      unsigned shift = 0;
+      mpfr_t t;
+      mp_limb_t t_limbs[limb_count];
+      mpfr_custom_init(t_limbs, digits2);
+      mpfr_custom_init_set(t, MPFR_NAN_KIND, 0, digits2, t_limbs);
+      mpfr_set_ui(m_data, 0, GMP_RNDN);
+      while(i)
+      {
+         mpfr_set_ui(t, static_cast<unsigned long>(i & mask), GMP_RNDN);
+         if(shift)
+            mpfr_mul_2exp(t, t, shift, GMP_RNDN);
+         mpfr_add(m_data, m_data, t, GMP_RNDN);
+         shift += std::numeric_limits<unsigned long>::digits;
+         i >>= std::numeric_limits<unsigned long>::digits;
+      }
+      return *this;
+   }
+   mpfr_float_imp& operator = (__int128 i)
+   {
+      bool neg = i < 0;
+      *this = boost::multiprecision::detail::unsigned_abs(i);
+      if(neg)
+         mpfr_neg(m_data, m_data, GMP_RNDN);
+      return *this;
+   }
 #endif
    mpfr_float_imp& operator = (unsigned long i)
    {
