@@ -168,7 +168,12 @@ inline void eval_multiply(arithmetic_backend<Arithmetic>& result, const arithmet
    result.data() *= o.data();
 }
 template <class Arithmetic>
-inline typename enable_if_c<std::numeric_limits<Arithmetic>::has_infinity>::type eval_divide(arithmetic_backend<Arithmetic>& result, const arithmetic_backend<Arithmetic>& o)
+inline 
+#ifdef __clang__
+__attribute__((no_sanitize("undefined"))) 
+__attribute__((no_sanitize("address")))
+#endif
+typename enable_if_c<std::numeric_limits<Arithmetic>::has_infinity>::type eval_divide(arithmetic_backend<Arithmetic>& result, const arithmetic_backend<Arithmetic>& o)
 {
    result.data() /= o.data();
 }
@@ -226,7 +231,12 @@ inline void eval_multiply(arithmetic_backend<Arithmetic>& result, const arithmet
    result.data() = a.data() * b.data();
 }
 template <class Arithmetic>
-inline typename enable_if_c<std::numeric_limits<Arithmetic>::has_infinity>::type eval_divide(arithmetic_backend<Arithmetic>& result, const arithmetic_backend<Arithmetic>& a, const arithmetic_backend<Arithmetic>& b)
+inline 
+#ifdef __clang__
+__attribute__((no_sanitize("undefined"))) 
+__attribute__((no_sanitize("address")))
+#endif
+typename enable_if_c<std::numeric_limits<Arithmetic>::has_infinity>::type eval_divide(arithmetic_backend<Arithmetic>& result, const arithmetic_backend<Arithmetic>& a, const arithmetic_backend<Arithmetic>& b)
 {
    result.data() = a.data() / b.data();
 }
@@ -262,7 +272,12 @@ inline typename enable_if_c<(is_arithmetic<A2>::value && !std::numeric_limits<Ar
    result.data() = a.data() / b;
 }
 template <class Arithmetic, class A2>
-inline typename enable_if_c<(is_arithmetic<A2>::value && std::numeric_limits<Arithmetic>::has_infinity)>::type
+inline 
+#ifdef __clang__
+__attribute__((no_sanitize("undefined"))) 
+__attribute__((no_sanitize("address")))
+#endif
+typename enable_if_c<(is_arithmetic<A2>::value && std::numeric_limits<Arithmetic>::has_infinity)>::type
    eval_divide(arithmetic_backend<Arithmetic>& result, const arithmetic_backend<Arithmetic>& a, const A2& b)
 {
    result.data() = a.data() / b;
@@ -469,7 +484,12 @@ inline void eval_atan2(arithmetic_backend<Arithmetic>& result, const arithmetic_
 }
 
 template <class Arithmetic, class I>
-inline void eval_left_shift(arithmetic_backend<Arithmetic>& result, I val)
+inline 
+#ifdef __clang__
+__attribute__((no_sanitize("undefined"))) 
+__attribute__((no_sanitize("address")))
+#endif
+void eval_left_shift(arithmetic_backend<Arithmetic>& result, I val)
 {
    result.data() <<= val;
 }
