@@ -313,7 +313,7 @@ inline void eval_scalbn(logged_adaptor<Backend>& result, const logged_adaptor<Ba
 }
 
 template <class Backend>
-inline typename Backend::exponent_type eval_ilogb(const logged_adaptor<Backend>& arg)
+inline typename boost::common_type<int, typename Backend::exponent_type>::type eval_ilogb(const logged_adaptor<Backend>& arg)
 {
    log_prefix_event(arg.value(), "ilogb");
    typename Backend::exponent_type r = eval_ilogb(arg.value());

@@ -2915,17 +2915,18 @@ inline void eval_trunc(cpp_dec_float<Digits10, ExponentType, Allocator>& result,
 }
 
 template <unsigned Digits10, class ExponentType, class Allocator>
-inline ExponentType eval_ilogb(const cpp_dec_float<Digits10, ExponentType, Allocator>& val)
+inline typename common_type<int, ExponentType>::type eval_ilogb(const cpp_dec_float<Digits10, ExponentType, Allocator>& val)
 {
+   typedef typename common_type<int, ExponentType>::type result_type;
    if(val.iszero())
-      return (std::numeric_limits<ExponentType>::min)();
+      return (std::numeric_limits<result_type>::min)();
    if((val.isinf)())
-      return INT_MAX;
+      return (std::numeric_limits<result_type>::max)();
    if((val.isnan)())
 #ifdef FP_ILOGBNAN
-      return FP_ILOGBNAN;
+      return FP_ILOGBNAN == INT_MAX ? (std::numeric_limits<result_type>::max)() : (std::numeric_limits<result_type>::min)();
 #else
-      return INT_MAX;
+      return (std::numeric_limits<result_type>::max)();;
 #endif
    // Set result, to the exponent of val:
    return val.order();

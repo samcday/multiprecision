@@ -15,6 +15,7 @@
 #include <boost/mpl/fold.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/type_traits/make_unsigned.hpp>
+#include <boost/type_traits/common_type.hpp>
 
 #ifndef INSTRUMENT_BACKEND
 #ifndef BOOST_MP_INSTRUMENT
@@ -1471,22 +1472,23 @@ typename enable_if_c<sizeof(T) == 0>::type eval_frexp();
 // eval_ldexp and eval_frexp:
 //
 template <class B>
-inline typename B::exponent_type eval_ilogb(const B& val)
+inline typename boost::common_type<int, typename B::exponent_type>::type eval_ilogb(const B& val)
 {
+   typedef typename boost::common_type<int, typename B::exponent_type>::type result_type;
    BOOST_STATIC_ASSERT_MSG(!std::numeric_limits<number<B> >::is_specialized || (std::numeric_limits<number<B> >::radix == 2), "The default implementation of ilogb requires a base 2 number type");
-   typename B::exponent_type e;
+   result_type e;
    switch(eval_fpclassify(val))
    {
    case FP_NAN:
 #ifdef FP_ILOGBNAN
-      return FP_ILOGBNAN == INT_MAX ? (std::numeric_limits<typename B::exponent_type>::max)() : (std::numeric_limits<typename B::exponent_type>::min)();
+      return FP_ILOGBNAN == INT_MAX ? (std::numeric_limits<result_type>::max)() : (std::numeric_limits<result_type>::min)();
 #else
-      return (std::numeric_limits<typename B::exponent_type>::max)();
+      return (std::numeric_limits<result_type>::max)();
 #endif
    case FP_INFINITE:
-      return (std::numeric_limits<typename B::exponent_type>::max)();
+      return (std::numeric_limits<result_type>::max)();
    case FP_ZERO:
-      return (std::numeric_limits<typename B::exponent_type>::min)();
+      return (std::numeric_limits<result_type>::min)();
    }
    B result;
    eval_frexp(result, val, &e);
@@ -3151,7 +3153,7 @@ HETERO_BINARY_OP_FUNCTOR_B(pow, unsigned, number_kind_integer)
 // ilogb:
 //
 template <class Backend, multiprecision::expression_template_option ExpressionTemplates>
-inline typename enable_if_c<number_category<Backend>::value == number_kind_floating_point, typename Backend::exponent_type>::type 
+inline typename enable_if_c<number_category<Backend>::value == number_kind_floating_point, typename boost::common_type<int, typename Backend::exponent_type>::type>::type 
    ilogb(const multiprecision::number<Backend, ExpressionTemplates>& val)
 {
    using default_ops::eval_ilogb;
@@ -3159,7 +3161,7 @@ inline typename enable_if_c<number_category<Backend>::value == number_kind_float
 }
 
 template <class tag, class A1, class A2, class A3, class A4>
-inline typename enable_if_c<number_category<detail::expression<tag, A1, A2, A3, A4> >::value == number_kind_floating_point, typename multiprecision::detail::expression<tag, A1, A2, A3, A4>::result_type::backend_type::exponent_type>::type
+inline typename enable_if_c<number_category<detail::expression<tag, A1, A2, A3, A4> >::value == number_kind_floating_point, typename boost::common_type<int, typename multiprecision::detail::expression<tag, A1, A2, A3, A4>::result_type::backend_type::exponent_type>::type>::type
 ilogb(const detail::expression<tag, A1, A2, A3, A4>& val)
 {
    using default_ops::eval_ilogb;

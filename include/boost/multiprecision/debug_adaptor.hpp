@@ -288,7 +288,7 @@ inline void eval_scalbn(debug_adaptor<Backend>& result, const debug_adaptor<Back
 }
 
 template <class Backend>
-inline typename Backend::exponent_type eval_ilogb(const debug_adaptor<Backend>& arg)
+inline typename boost::common_type<int, typename Backend::exponent_type>::type eval_ilogb(const debug_adaptor<Backend>& arg)
 {
    using default_ops::eval_ilogb;
    return eval_ilogb(arg.value());
