@@ -1481,7 +1481,7 @@ inline typename boost::common_type<int, typename B::exponent_type>::type eval_il
    {
    case FP_NAN:
 #ifdef FP_ILOGBNAN
-      return FP_ILOGBNAN == INT_MAX ? (std::numeric_limits<result_type>::max)() : (std::numeric_limits<result_type>::min)();
+      return FP_ILOGBNAN > 0 ? (std::numeric_limits<result_type>::max)() : (std::numeric_limits<result_type>::min)();
 #else
       return (std::numeric_limits<result_type>::max)();
 #endif

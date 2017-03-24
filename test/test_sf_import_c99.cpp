@@ -1254,11 +1254,14 @@ void test_c99_appendix_F()
       BOOST_CHECK(isnan(val));
    }
    // F.9.3.5:
-   typename T::backend_type::exponent_type eval;
-   typename T::backend_type::exponent_type fp_ilogb0 = (std::numeric_limits<typename T::backend_type::exponent_type>::min)();
-   typename T::backend_type::exponent_type fp_ilogbnan =
+   typedef typename boost::common_type<int, typename T::backend_type::exponent_type>::type exp_type;
+   exp_type eval;
+   exp_type fp_ilogb0 = (std::numeric_limits<exp_type>::min)();
+   exp_type fp_ilogbnan =
 #ifdef FP_ILOGBNAN
       FP_ILOGBNAN;
+   if((fp_ilogbnan != (std::numeric_limits<exp_type>::max)()) && (fp_ilogbnan != (std::numeric_limits<exp_type>::min)()))
+      fp_ilogbnan = fp_ilogbnan < 0 ? (std::numeric_limits<exp_type>::min)() : (std::numeric_limits<exp_type>::max)();  // Oh dear non-standard value!!
 #else
       INT_MAX;
 #endif
